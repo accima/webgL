@@ -1,0 +1,125 @@
+<!DOCTYPE HTML>
+<html>
+
+	<head>
+		<title>OGC Maps 3D - TR3</title>
+		<script src="terrain20.js"></script>
+	</head>
+  
+	<body>
+		<div>
+			image<img id="imgOri" src="utm_world.gif" width="100" height="100">
+			canvas<canvas id="canvasOri" width="100" height="100"></canvas>
+			<script>
+				var canvas = document.getElementById('canvasOri');
+				var context = canvas.getContext('2d');
+				var imageObj = new Image();
+	
+				imageObj.onload = function() {
+					context.drawImage(imageObj, 0, 0 , 100 , 100);
+				};
+				imageObj.src = 'utm_world.gif';
+			</script>
+			URL<div id="urlOri" style="top: 0px;position: fixed;left: 320px;heigth: 100px">http://www.ign.es/wms-inspire/pnoa-ma?&VERSION=1.1.1&REQUEST=GetMap&LAYERS=OI.OrthoimageCoverage&FORMAT=image/jpeg&SRS=EPSG:25830&BBOX=647399,4220032,649899,4222532&EXCEPTIONS=application/vnd.ogc.se_inimage&width=500&height=500</div>
+			<div id="localFileDiv" style="top: 0px;position: fixed;left: 320px;heigth: 100px"></div>
+		</div>
+		<div id="contMeshMap" style="width:500px;height:500px;border:solid"></div>
+		<script type="text/javascript">
+			cont = 0;
+			function changeMap(){
+				var options = optValues();
+				if(cont == 0){
+					document.getElementById('imgOri').style.border = 'solid';
+					document.getElementById('canvasOri').style.border = 'none';
+					//document.getElementById('urlOri').style.border = 'none';
+					document.getElementById('localFileDiv').style.border = 'none';
+					var imgOriObj = document.getElementById('imgOri');
+					TR3.setMeshMap(imgOriObj,'contMeshMap',[647399,4220032,649899,4222532],'EPSG:25830',options);
+				}else if(cont ==1){
+					document.getElementById('imgOri').style.border = 'none';
+					document.getElementById('canvasOri').style.border = 'solid';
+					document.getElementById('urlOri').style.border = 'none';
+					document.getElementById('localFileDiv').style.border = 'none';
+					TR3.setMeshMap("canvasOri",'contMeshMap',[647399,4220032,649899,4222532],'EPSG:25830',options);
+				}else{
+					document.getElementById('imgOri').style.border = 'none';
+					document.getElementById('canvasOri').style.border = 'none';
+					document.getElementById('urlOri').style.border = 'solid';
+					document.getElementById('localFileDiv').style.border = 'none';
+					TR3.setMeshMap("http://www.ign.es/wms-inspire/pnoa-ma?&VERSION=1.1.1&REQUEST=GetMap&LAYERS=OI.OrthoimageCoverage&FORMAT=image/jpeg&SRS=EPSG:25830&BBOX=647399,4220032,649899,4222532&EXCEPTIONS=application/vnd.ogc.se_inimage&width=500&height=500",'contMeshMap',[647399,4220032,649899,4222532],'EPSG:25830',options);
+					cont =-1;
+				}
+				cont++;
+			};
+			
+			function changeOpt(){
+			
+				var options = optValues();
+				TR3.setMeshOptions( options.cursor3d, options.anaglyph);
+			};
+			
+			function optValues(){
+				var cursor3dOpt, anaglyphOpt;
+				
+				if(document.getElementById('cursor3D')){
+					cursor3dOpt = document.getElementById('cursor3D').checked;}else{cursor3dOpt = true;}
+				if(document.getElementById('anaglyph')){
+					anaglyphOpt = document.getElementById('anaglyph').checked;}else{anaglyphOpt = false;}
+				
+				return {cursor3d: cursor3dOpt,anaglyph: anaglyphOpt};
+			};
+			
+			changeMap();
+		</script>
+		<input type="button" value="Start/Change" onclick="changeMap()">
+		
+		<input type="file" id="files" name="files[]" accept="*" />
+		
+		<input type="text" id="coordBbox" size="40" value="[647399,4220032,649899,4222532]">
+		<input type="text" id="coordEpsg" size="30" value="EPSG:25830"><br>
+		
+		<input type="checkbox" id="cursor3D" onclick="changeOpt()" checked>cursor 3D
+		<input type="checkbox" id="anaglyph" onclick="changeOpt()">anaglyph
+		<input type="checkbox" id="clone">clone
+		<script>
+			function handleFileSelect(evt) {
+				document.getElementById('imgOri').style.border = 'none';
+				document.getElementById('canvasOri').style.border = 'none';
+				document.getElementById('urlOri').style.border = 'none';
+				document.getElementById('localFileDiv').style.border = 'solid';
+				
+				var files = evt.target.files; // FileList object
+	
+				f = files[0]
+				var reader = new FileReader();
+			
+				// Closure to capture the file information.
+				reader.onload = (function(theFile) {
+					return function(e) {
+						// Render thumbnail.
+						if(f.type.indexOf('image/')!=-1){
+							var localFileDiv = document.getElementById('localFileDiv');
+							localFileDiv.innerHTML = '<img id="localFile" width="100" height="100" src="'+ e.target.result +'" title="'+ escape(theFile.name) +'"/>';
+							TR3.setMeshMap("localFile",'contMeshMap',eval(document.getElementById('coordBbox').value),document.getElementById('coordEpsg').value,{dtm: false, cursor: true, anaglyph: false});
+						}else if(f.name.indexOf('.glb')!=-1){
+							if(document.getElementById('cursor3D').checked){
+								TR3.load3Dfile( (window.URL || window.webkitURL).createObjectURL(f), [{	point: [10,50,10]}, {point: [0,3,0] }], [1,3,5], true );
+							}else{
+								TR3.load3Dfile( (window.URL || window.webkitURL).createObjectURL(f), false, false, true ); 
+							}
+						}else{
+							alert('invalid file');
+						}
+						
+					};
+				})(f);
+			
+				// Read in the image file as a data URL.
+				reader.readAsDataURL(f);
+			}
+		
+			document.getElementById('files').addEventListener('change', handleFileSelect, false);
+		</script>
+	</body>
+  
+</html>
